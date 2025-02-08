@@ -91,12 +91,15 @@ export default class TelegramBot extends ApplicationComponent {
 					this.application.quit(1);
 				})
 				.on("message", async ctx => {
-					const trackInfos = await this.application.musicDownloader.searchTracks(ctx.message.text.trim().toLowerCase());
-					if (trackInfos.length === 0) {
+					const replyMessageInfo = await this.bot.telegram.sendMessage(ctx.chat.id, "Поиск...");
+					ctx.session.messageToDeleteIds.push(replyMessageInfo["message_id"]);
+
+					const tracks = await this.application.musicDownloadManager.searchTracks(ctx.message.text.trim().toLowerCase());
+					if (tracks.length === 0) {
 						this.autoDeleteContextMessage(ctx);
 						await this.sendMessageWithAutoDelete(ctx.chat.id, "Не найдено");
 					} else {
-						this.trackInfos = trackInfos
+						this.trackInfos = tracks
 							.slice(0, MAX_SEARCH_ENTRIES_BUTTONS_COUNT);
 
 						const replyMessageInfo = await this.bot.telegram.sendMessage(
@@ -119,10 +122,10 @@ export default class TelegramBot extends ApplicationComponent {
 				})
 				.action("back", ctx => ctx.scene.enter("main"))
 				.action(/track_\d/, async ctx => {
-					const { fileName, trackFileBuffer } = await this.application.musicDownloader.downloadTrack(this.trackInfos[Number(ctx.match.input.split("_")[1])]);
-
 					const replyMessageInfo = await this.bot.telegram.sendMessage(ctx.chat.id, "Загрузка...");
 					ctx.session.messageToDeleteIds.push(replyMessageInfo["message_id"]);
+
+					const { fileName, trackFileBuffer } = await this.trackInfos[Number(ctx.match.input.split("_")[1])].downloadTrack();
 
 					await this.bot.telegram.sendAudio(ctx.chat.id, Input.fromBuffer(trackFileBuffer, fileName));
 

@@ -1,18 +1,25 @@
 import { JSDOM } from "jsdom";
 import filenamify from "filenamify";
 
-import ApplicationComponent from "./app/ApplicationComponent.js";
+import MusicDownloader from "./MusicDownloader.js";
+import Track from "./Track.js";
 
 const BASE_URL = "https://www.drivemusic.club/";
 
-class TrackInfo {
-	constructor(title, url) {
-		this.title = title;
+class DriveMusicClubTrack extends Track {
+	constructor(title, url, downloader) {
+		super(title);
+
 		this.url = url;
+		this.downloader = downloader;
+	}
+
+	async downloadTrack() {
+		return this.downloader.downloadTrack(this);
 	}
 }
 
-export default class DriveMusicClubDownloader extends ApplicationComponent {
+export default class DriveMusicClubDownloader extends MusicDownloader {
 	async searchTracks(queryString) {
 		const url = new URL(BASE_URL);
 		url.searchParams.set("do", "search");
@@ -31,12 +38,12 @@ export default class DriveMusicClubDownloader extends ApplicationComponent {
 
 		return searchResponseJson
 			.filter(searchResponseItem => searchResponseItem.type === "song")
-			.map(searchResponseItem => new TrackInfo(searchResponseItem.value, searchResponseItem.label));
+			.map(searchResponseItem => new DriveMusicClubTrack(searchResponseItem.value, searchResponseItem.label, this));
 	}
 
-	async downloadTrack(trackInfo) {
+	async downloadTrack(track) {
 		const url = new URL(BASE_URL);
-		url.pathname = trackInfo.url;
+		url.pathname = track.url;
 
 		const trackPageResponse = await fetch(url.href, {
 			method: "GET"
@@ -46,14 +53,13 @@ export default class DriveMusicClubDownloader extends ApplicationComponent {
 
 		const dom = new JSDOM(trackPageResponseText);
 		const trackTitle = dom.window.document.querySelector(".song-title-text").textContent;
-		const fileName = filenamify(`${trackTitle}.mp3`);
 		const trackLink = dom.window.document.querySelector("a.song-author-btn.btn-download").getAttribute("href");
 
 		const trackFileResponse = await fetch(trackLink);
 		const trackFileBuffer = Buffer.from(await trackFileResponse.arrayBuffer());
 
 		return {
-			fileName,
+			fileName: filenamify(`${trackTitle}.mp3`),
 			trackFileBuffer
 		};
 	}

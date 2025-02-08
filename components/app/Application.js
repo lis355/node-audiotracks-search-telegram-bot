@@ -3,7 +3,7 @@ import path from "node:path";
 import fs from "fs-extra";
 
 import TelegramBot from "../TelegramBot.js";
-import DriveMusicClubDownloader from "../DriveMusicClubDownloader.js";
+import MusicDownloadManager from "../musicDownloaders/MusicDownloadManager.js";
 
 const { name, version } = fs.readJsonSync(path.resolve(process.cwd(), "package.json"));
 
@@ -25,7 +25,7 @@ export default class Application {
 		this.components = [];
 
 		this.addComponent(this.telegramBot = new TelegramBot());
-		this.addComponent(this.musicDownloader = new DriveMusicClubDownloader());
+		this.addComponent(this.musicDownloadManager = new MusicDownloadManager());
 	}
 
 	get isDevelopment() {
