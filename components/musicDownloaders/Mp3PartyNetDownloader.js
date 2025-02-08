@@ -35,7 +35,7 @@ export default class Mp3PartyNetDownloader extends MusicDownloader {
 		const trackElements = Array.from(dom.window.document.querySelectorAll(".track.song-item .track__user-panel"))
 			.map(trackElement => new Mp3PartyNetTrack(`${trackElement.getAttribute("data-js-artist-name")} - ${trackElement.getAttribute("data-js-song-title")}`, trackElement.getAttribute("data-js-url"), this));
 
-		return trackElements
+		return trackElements;
 	}
 
 	async downloadTrack(track) {

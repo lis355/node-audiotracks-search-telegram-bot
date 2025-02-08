@@ -7,7 +7,11 @@ function authMiddleware(ctx, next) {
 }
 
 function isMeMiddleware(ctx, next) {
-	if (ctx.chat.id !== Number(process.env.TELEGRAM_USER_ID)) throw new Error(`Bad user @${ctx.chat.username} (id=${ctx.chat.id})`);
+	isMeMiddleware.whiteListUserIds = isMeMiddleware.whiteListUserIds ||
+		String(process.env.TELEGRAM_WHITELIST_USER_IDS).split(",").map(Number).filter(Boolean);
+
+	if (isMeMiddleware.whiteListUserIds.length > 0 &&
+		!isMeMiddleware.whiteListUserIds.includes(ctx.chat.id)) throw new Error(`Bad user @${ctx.chat.username} (id=${ctx.chat.id})`);
 
 	return next();
 }
@@ -91,6 +95,8 @@ export default class TelegramBot extends ApplicationComponent {
 					this.application.quit(1);
 				})
 				.on("message", async ctx => {
+					console.log(`Search audio for user @${ctx.chat.username} (id=${ctx.chat.id}) query="${ctx.message.text}"`);
+
 					const replyMessageInfo = await this.bot.telegram.sendMessage(ctx.chat.id, "Поиск...");
 					ctx.session.messageToDeleteIds.push(replyMessageInfo["message_id"]);
 
@@ -122,10 +128,14 @@ export default class TelegramBot extends ApplicationComponent {
 				})
 				.action("back", ctx => ctx.scene.enter("main"))
 				.action(/track_\d/, async ctx => {
+					const track = this.trackInfos[Number(ctx.match.input.split("_")[1])];
+
+					console.log(`Download audio track "${track.title}" for user @${ctx.chat.username} (id=${ctx.chat.id})`);
+
 					const replyMessageInfo = await this.bot.telegram.sendMessage(ctx.chat.id, "Загрузка...");
 					ctx.session.messageToDeleteIds.push(replyMessageInfo["message_id"]);
 
-					const { fileName, trackFileBuffer } = await this.trackInfos[Number(ctx.match.input.split("_")[1])].downloadTrack();
+					const { fileName, trackFileBuffer } = await track.downloadTrack();
 
 					await this.bot.telegram.sendAudio(ctx.chat.id, Input.fromBuffer(trackFileBuffer, fileName));
 
