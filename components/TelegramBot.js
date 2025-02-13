@@ -3,15 +3,24 @@ import { Telegraf, Input, session, Scenes } from "telegraf";
 import ApplicationComponent from "./app/ApplicationComponent.js";
 
 function authMiddleware(ctx, next) {
-	return isMeMiddleware(ctx, next);
+	if (!authMiddleware.whitelistUserIds) authMiddleware.whitelistUserIds = String(process.env.TELEGRAM_WHITELIST_USER_IDS).split(",").map(Number).filter(Number.isInteger);
+	if (!authMiddleware.adminUserIds) authMiddleware.adminUserIds = String(process.env.TELEGRAM_ADMIN_USER_IDS).split(",").map(Number).filter(Number.isInteger);
+
+	ctx.isAuthenticated = authMiddleware.whitelistUserIds == 0 ||
+		authMiddleware.whitelistUserIds.includes(ctx.chat.id);
+	ctx.isAdmin = authMiddleware.adminUserIds.includes(ctx.chat.id);
+
+	return next();
 }
 
-function isMeMiddleware(ctx, next) {
-	isMeMiddleware.whiteListUserIds = isMeMiddleware.whiteListUserIds ||
-		String(process.env.TELEGRAM_WHITELIST_USER_IDS).split(",").map(Number).filter(Boolean);
+function isUserInWhiteListMiddleware(ctx, next) {
+	if (!ctx.isAuthenticated) throw new Error(`User @${ctx.chat.username} (id=${ctx.chat.id}) is not in whitelist`);
 
-	if (isMeMiddleware.whiteListUserIds.length > 0 &&
-		!isMeMiddleware.whiteListUserIds.includes(ctx.chat.id)) throw new Error(`Bad user @${ctx.chat.username} (id=${ctx.chat.id})`);
+	return next();
+}
+
+function isUserAdminMiddleware(ctx, next) {
+	if (!ctx.isAdmin) throw new Error(`User @${ctx.chat.username} (id=${ctx.chat.id}) is not admin`);
 
 	return next();
 }
@@ -43,6 +52,7 @@ export default class TelegramBot extends ApplicationComponent {
 					return next();
 				},
 				authMiddleware,
+				isUserInWhiteListMiddleware,
 				session({
 					defaultSession: () => ({})
 				}),
@@ -91,9 +101,11 @@ export default class TelegramBot extends ApplicationComponent {
 
 					ctx.scene.enter("main");
 				})
-				.command("stop", async ctx => {
-					this.application.quit(1);
-				})
+				.command("stop",
+					isUserAdminMiddleware,
+					async ctx => {
+						this.application.quit(1);
+					})
 				.on("message", async ctx => {
 					console.log(`Search audio for user @${ctx.chat.username} (id=${ctx.chat.id}) query="${ctx.message.text}"`);
 
@@ -105,14 +117,14 @@ export default class TelegramBot extends ApplicationComponent {
 						this.autoDeleteContextMessage(ctx);
 						await this.sendMessageWithAutoDelete(ctx.chat.id, "Не найдено");
 					} else {
-						this.trackInfos = tracks
+						ctx.session.trackInfos = tracks
 							.slice(0, MAX_SEARCH_ENTRIES_BUTTONS_COUNT);
 
 						const replyMessageInfo = await this.bot.telegram.sendMessage(
 							ctx.chat.id,
 							"Найденные треки:",
 							InlineKeyboard(
-								...this.trackInfos
+								...ctx.session.trackInfos
 									.map((trackInfo, index) =>
 										Row(
 											Button(trackInfo.title, `track_${index}`)
@@ -128,7 +140,7 @@ export default class TelegramBot extends ApplicationComponent {
 				})
 				.action("back", ctx => ctx.scene.enter("main"))
 				.action(/track_\d/, async ctx => {
-					const track = this.trackInfos[Number(ctx.match.input.split("_")[1])];
+					const track = ctx.session.trackInfos[Number(ctx.match.input.split("_")[1])];
 
 					console.log(`Download audio track "${track.title}" for user @${ctx.chat.username} (id=${ctx.chat.id})`);
 
@@ -139,7 +151,7 @@ export default class TelegramBot extends ApplicationComponent {
 
 					await this.bot.telegram.sendAudio(ctx.chat.id, Input.fromBuffer(trackFileBuffer, fileName));
 
-					this.trackInfos = null;
+					ctx.session.trackInfos = null;
 
 					ctx.scene.enter("main");
 				})

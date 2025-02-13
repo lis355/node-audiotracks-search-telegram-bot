@@ -48,4 +48,16 @@ export default class Application {
 	async run() {
 		for (let i = 0; i < this.components.length; i++) await this.components[i].run();
 	}
+
+	async quit(code = 0) {
+		for (let i = 0; i < this.components.length; i++) {
+			await this.components[i].exit(code);
+		}
+
+		this.exit(code);
+	}
+
+	exit(code = 0) {
+		process.exit(code);
+	}
 }
