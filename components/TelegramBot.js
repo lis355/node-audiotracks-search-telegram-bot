@@ -125,11 +125,14 @@ export default class TelegramBot extends ApplicationComponent {
 							"Найденные треки:",
 							InlineKeyboard(
 								...ctx.session.trackInfos
-									.map((trackInfo, index) =>
-										Row(
-											Button(trackInfo.title, `track_${index}`)
-										)
-									),
+									.map((trackInfo, index) => {
+										let buttonTitle = trackInfo.title;
+										if (this.application.isDevelopment) buttonTitle += ` | ${trackInfo.constructor.name}`;
+
+										return Row(
+											Button(buttonTitle, `track_${index}`)
+										);
+									}),
 								Row(
 									Button("-- Back --", "back")
 								)
@@ -149,7 +152,7 @@ export default class TelegramBot extends ApplicationComponent {
 
 					const { fileName, trackFileBuffer } = await track.downloadTrack();
 
-					await this.bot.telegram.sendAudio(ctx.chat.id, Input.fromBuffer(trackFileBuffer, fileName));
+					await this.bot.telegram.sendAudio(ctx.chat.id, Input.fromBuffer(trackFileBuffer));
 
 					ctx.session.trackInfos = null;
 
