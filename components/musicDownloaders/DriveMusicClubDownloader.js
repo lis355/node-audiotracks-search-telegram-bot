@@ -1,5 +1,4 @@
 import { JSDOM } from "jsdom";
-import filenamify from "filenamify";
 
 import MusicDownloader from "./MusicDownloader.js";
 import Track from "./Track.js";
@@ -7,8 +6,8 @@ import Track from "./Track.js";
 const BASE_URL = "https://www.drivemusic.club/";
 
 class DriveMusicClubTrack extends Track {
-	constructor(title, url, downloader) {
-		super(title);
+	constructor(artist, title, url, downloader) {
+		super(artist, title);
 
 		this.url = url;
 		this.downloader = downloader;
@@ -38,7 +37,15 @@ export default class DriveMusicClubDownloader extends MusicDownloader {
 
 		return searchResponseJson
 			.filter(searchResponseItem => searchResponseItem.type === "song")
-			.map(searchResponseItem => new DriveMusicClubTrack(searchResponseItem.value, searchResponseItem.label, this));
+			.map(searchResponseItem => {
+				const [artist, title] = searchResponseItem.value.split(" - ");
+
+				return new DriveMusicClubTrack(
+					artist,
+					title,
+					searchResponseItem.label,
+					this);
+			});
 	}
 
 	async downloadTrack(track) {
@@ -52,15 +59,11 @@ export default class DriveMusicClubDownloader extends MusicDownloader {
 		const trackPageResponseText = await trackPageResponse.text();
 
 		const dom = new JSDOM(trackPageResponseText);
-		const trackTitle = dom.window.document.querySelector(".song-title-text").textContent;
 		const trackLink = dom.window.document.querySelector("a.song-author-btn.btn-download").getAttribute("href");
 
 		const trackFileResponse = await fetch(trackLink);
 		const trackFileBuffer = Buffer.from(await trackFileResponse.arrayBuffer());
 
-		return {
-			fileName: filenamify(`${trackTitle}.mp3`),
-			trackFileBuffer
-		};
+		return trackFileBuffer;
 	}
 }

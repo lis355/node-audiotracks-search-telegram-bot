@@ -1,10 +1,9 @@
 {
 	"name": "node-audiotracks-search-telegram-bot",
-	"version": "1.0.3",
+	"version": "1.1.0",
 	"type": "module",
 	"dependencies": {
 		"dotenv-flow": "^4.1.0",
-		"filenamify": "^6.0.0",
 		"fs-extra": "^11.3.0",
 		"jsdom": "^26.0.0",
 		"telegraf": "^4.16.3"

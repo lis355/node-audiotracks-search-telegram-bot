@@ -1,8 +1,9 @@
 export default class Track {
-	constructor(title) {
+	constructor(artist, title) {
+		this.artist = artist;
 		this.title = title;
 	}
 
-	// { fileName, trackFileBuffer }
+	// trackFileBuffer
 	async downloadTrack() { }
 }

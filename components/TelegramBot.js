@@ -126,7 +126,7 @@ export default class TelegramBot extends ApplicationComponent {
 							InlineKeyboard(
 								...ctx.session.trackInfos
 									.map((trackInfo, index) => {
-										let buttonTitle = trackInfo.title;
+										let buttonTitle = `${trackInfo.artist} - ${trackInfo.title}`;
 										if (this.application.isDevelopment) buttonTitle += ` | ${trackInfo.constructor.name}`;
 
 										return Row(
@@ -150,9 +150,11 @@ export default class TelegramBot extends ApplicationComponent {
 					const replyMessageInfo = await this.bot.telegram.sendMessage(ctx.chat.id, "Загрузка...");
 					ctx.session.messageToDeleteIds.push(replyMessageInfo["message_id"]);
 
-					const { fileName, trackFileBuffer } = await track.downloadTrack();
+					const trackFileBuffer = await track.downloadTrack();
 
-					await this.bot.telegram.sendAudio(ctx.chat.id, Input.fromBuffer(trackFileBuffer));
+					const mp3TrackBuffer = await this.application.musicConverter.convertAudioTrackBufferToMp3TrackBuffer(trackFileBuffer, track.artist, track.title);
+
+					await this.bot.telegram.sendAudio(ctx.chat.id, Input.fromBuffer(mp3TrackBuffer));
 
 					ctx.session.trackInfos = null;
 
