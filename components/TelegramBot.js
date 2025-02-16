@@ -143,18 +143,29 @@ export default class TelegramBot extends ApplicationComponent {
 				})
 				.action("back", ctx => ctx.scene.enter("main"))
 				.action(/track_\d/, async ctx => {
-					const track = ctx.session.trackInfos[Number(ctx.match.input.split("_")[1])];
+					try {
+						const track = ctx.session.trackInfos[Number(ctx.match.input.split("_")[1])];
 
-					console.log(`Download audio track "${track.title}" for user @${ctx.chat.username} (id=${ctx.chat.id})`);
+						console.log(`Download audio track "${track.title}" for user @${ctx.chat.username} (id=${ctx.chat.id})`);
 
-					const replyMessageInfo = await this.bot.telegram.sendMessage(ctx.chat.id, "Загрузка...");
-					ctx.session.messageToDeleteIds.push(replyMessageInfo["message_id"]);
+						const replyMessageInfo = await this.bot.telegram.sendMessage(ctx.chat.id, "Загрузка...");
+						ctx.session.messageToDeleteIds.push(replyMessageInfo["message_id"]);
 
-					const trackFileBuffer = await track.downloadTrack();
+						const trackFileBuffer = await track.downloadTrack();
 
-					const mp3TrackBuffer = await this.application.musicConverter.convertAudioTrackBufferToMp3TrackBuffer(trackFileBuffer, track.artist, track.title);
+						console.log(`Convert audio track "${track.title}" for user @${ctx.chat.username} (id=${ctx.chat.id})`);
 
-					await this.bot.telegram.sendAudio(ctx.chat.id, Input.fromBuffer(mp3TrackBuffer));
+						const mp3TrackBuffer = await this.application.musicConverter.convertAudioTrackBufferToMp3TrackBuffer(trackFileBuffer, track.artist, track.title);
+
+						console.log(`Uploading audio track "${track.title}" for user @${ctx.chat.username} (id=${ctx.chat.id})`);
+
+						await this.bot.telegram.sendAudio(ctx.chat.id, Input.fromBuffer(mp3TrackBuffer));
+					} catch (error) {
+						console.error(`Error by user @${ctx.chat.username} (id=${ctx.chat.id})`);
+						console.error(error);
+
+						await this.bot.telegram.sendMessage(ctx.chat.id, "Произошла внутренняя ошибка");
+					}
 
 					ctx.session.trackInfos = null;
 
