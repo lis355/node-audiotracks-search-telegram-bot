@@ -124,8 +124,7 @@ export default class TelegramBot extends ApplicationComponent {
 							InlineKeyboard(
 								...ctx.session.trackInfos
 									.map((trackInfo, index) => {
-										let buttonTitle = `${trackInfo.artist} - ${trackInfo.title}`;
-										if (this.application.isDevelopment) buttonTitle += ` | ${trackInfo.constructor.name}`;
+										const buttonTitle = `${trackInfo.artist} - ${trackInfo.title} | ${trackInfo.trackSource}`;
 
 										return Row(
 											Button(buttonTitle, `track_${index}`)

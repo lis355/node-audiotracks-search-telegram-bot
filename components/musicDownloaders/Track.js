@@ -4,6 +4,8 @@ export default class Track {
 		this.title = title;
 	}
 
+	get trackSource() { return `[${this.constructor.name.replace("Track", "")}]`; }
+
 	// trackFileBuffer
 	async downloadTrack() { }
 }

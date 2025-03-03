@@ -9,15 +9,15 @@ function getRandomArrayIndex(arr) {
 }
 
 function shuffleArray(arr) {
-	for (i = 0; i < arr.length; i++) {
-		const a1 = getRandomArrayIndex();
-		const a2 = getRandomArrayIndex();
+	for (let i = 0; i < arr.length; i++) {
+		const a1 = getRandomArrayIndex(arr);
+		const a2 = getRandomArrayIndex(arr);
 
 		if (a1 === a2) continue;
 
-		const tmp = arr[x];
-		arr[x] = arr[y];
-		arr[y] = tmp;
+		const tmp = arr[a1];
+		arr[a1] = arr[a2];
+		arr[a2] = tmp;
 	}
 }
 

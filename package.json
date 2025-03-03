@@ -1,6 +1,6 @@
 {
 	"name": "node-audiotracks-search-telegram-bot",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"type": "module",
 	"dependencies": {
 		"dotenv-flow": "^4.1.0",
