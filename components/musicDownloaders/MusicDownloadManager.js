@@ -2,6 +2,25 @@ import ApplicationComponent from "../app/ApplicationComponent.js";
 import DriveMusicClubDownloader from "./DriveMusicClubDownloader.js";
 import Mp3PartyNetDownloader from "./Mp3PartyNetDownloader.js";
 
+const MAX_SEARCH_ENTRIES_AMOUNT = 10;
+
+function getRandomArrayIndex(arr) {
+	return Math.floor(Math.random() * arr.length);
+}
+
+function shuffleArray(arr) {
+	for (i = 0; i < arr.length; i++) {
+		const a1 = getRandomArrayIndex();
+		const a2 = getRandomArrayIndex();
+
+		if (a1 === a2) continue;
+
+		const tmp = arr[x];
+		arr[x] = arr[y];
+		arr[y] = tmp;
+	}
+}
+
 export default class MusicDownloadManager extends ApplicationComponent {
 	async initialize() {
 		this.musicDownloaders = this.createMusicDownloaders();
@@ -15,13 +34,20 @@ export default class MusicDownloadManager extends ApplicationComponent {
 	}
 
 	async searchTracks(queryString) {
-		// TODO подумать, как сделать, если у первого даунлоадера будут результаты, но среди них не будет нужного
+		shuffleArray(this.musicDownloaders);
+
+		const result = [];
+
 		for (const musicDownloader of this.musicDownloaders) {
 			const tracks = await musicDownloader.searchTracks(queryString);
 
-			if (tracks.length > 0) return tracks;
+			result.push(...tracks);
+
+			if (result.length >= MAX_SEARCH_ENTRIES_AMOUNT) break;
 		}
 
-		return [];
+		result.splice(MAX_SEARCH_ENTRIES_AMOUNT, result.length - MAX_SEARCH_ENTRIES_AMOUNT);
+
+		return result;
 	}
 }

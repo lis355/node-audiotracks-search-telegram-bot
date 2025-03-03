@@ -29,7 +29,6 @@ function copyableText(str) {
 	return `\`${str}\``;
 }
 
-const MAX_SEARCH_ENTRIES_BUTTONS_COUNT = 10;
 const MESSAGE_LIFETIME_IN_MILLISECONDS = 10000;
 
 export default class TelegramBot extends ApplicationComponent {
@@ -117,8 +116,7 @@ export default class TelegramBot extends ApplicationComponent {
 						this.autoDeleteContextMessage(ctx);
 						await this.sendMessageWithAutoDelete(ctx.chat.id, "Не найдено");
 					} else {
-						ctx.session.trackInfos = tracks
-							.slice(0, MAX_SEARCH_ENTRIES_BUTTONS_COUNT);
+						ctx.session.trackInfos = tracks;
 
 						const replyMessageInfo = await this.bot.telegram.sendMessage(
 							ctx.chat.id,
