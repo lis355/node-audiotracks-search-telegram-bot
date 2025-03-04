@@ -1,6 +1,7 @@
 import ApplicationComponent from "../app/ApplicationComponent.js";
 import DriveMusicClubDownloader from "./DriveMusicClubDownloader.js";
 import Mp3PartyNetDownloader from "./Mp3PartyNetDownloader.js";
+import MuzofondFMDownloader from "./MuzofondFMDownloader.js";
 
 const MAX_SEARCH_ENTRIES_AMOUNT = 10;
 
@@ -29,7 +30,8 @@ export default class MusicDownloadManager extends ApplicationComponent {
 	createMusicDownloaders() {
 		return [
 			new DriveMusicClubDownloader(this),
-			new Mp3PartyNetDownloader(this)
+			new Mp3PartyNetDownloader(this),
+			new MuzofondFMDownloader(this)
 		];
 	}
 

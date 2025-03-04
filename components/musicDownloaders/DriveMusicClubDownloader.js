@@ -44,7 +44,8 @@ export default class DriveMusicClubDownloader extends MusicDownloader {
 					artist,
 					title,
 					searchResponseItem.label,
-					this);
+					this
+				);
 			});
 	}
 

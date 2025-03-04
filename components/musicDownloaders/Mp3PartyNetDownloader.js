@@ -1,5 +1,6 @@
 import { JSDOM } from "jsdom";
 
+import fetch from "../../tools/fetchWithCookies.js";
 import MusicDownloader from "./MusicDownloader.js";
 import Track from "./Track.js";
 
@@ -39,7 +40,8 @@ export default class Mp3PartyNetDownloader extends MusicDownloader {
 					trackElement.getAttribute("data-js-song-title"),
 					trackElement.getAttribute("data-js-id"),
 					trackElement.getAttribute("data-js-url"),
-					this);
+					this
+				);
 			});
 
 		return trackElements;

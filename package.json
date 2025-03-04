@@ -1,11 +1,12 @@
 {
 	"name": "node-audiotracks-search-telegram-bot",
-	"version": "1.1.2",
+	"version": "1.2.0",
 	"type": "module",
 	"dependencies": {
 		"dotenv-flow": "^4.1.0",
 		"fs-extra": "^11.3.0",
 		"jsdom": "^26.0.0",
+		"node-fetch-cookies": "^2.1.1",
 		"telegraf": "^4.16.3"
 	},
 	"devDependencies": {
