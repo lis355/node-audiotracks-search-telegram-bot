@@ -42,6 +42,18 @@
 			"cwd": "${workspaceFolder}/service/windows/",
 			"console": "integratedTerminal",
 			"outputCapture": "std"
+		},
+		{
+			"name": "service-windows-restart",
+			"type": "node",
+			"request": "launch",
+			"skipFiles": [
+				"<node_internals>/**"
+			],
+			"program": "${workspaceFolder}/service/windows/serviceRestart.js",
+			"cwd": "${workspaceFolder}/service/windows/",
+			"console": "integratedTerminal",
+			"outputCapture": "std"
 		}
 	]
 }
