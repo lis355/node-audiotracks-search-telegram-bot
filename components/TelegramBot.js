@@ -36,11 +36,11 @@ export default class TelegramBot extends ApplicationComponent {
 		await super.initialize();
 
 		this.initializeBot();
-
-		console.log("[TelegramBot]: started");
 	}
 
 	initializeBot() {
+		if (!process.env.TELEGRAM_BOT_TOKEN) throw new Error("TELEGRAM_BOT_TOKEN is not set");
+
 		this.bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
 		this.bot
@@ -65,7 +65,9 @@ export default class TelegramBot extends ApplicationComponent {
 			.catch((error, ctx) => {
 				console.error(`Error for ${ctx.updateType}, ${error.message}, ${error.stack}`);
 			})
-			.launch({ dropPendingUpdates: !this.application.isDevelopment });
+			.launch({ dropPendingUpdates: !this.application.isDevelopment }, () => {
+				console.log("[TelegramBot]: launched successfull");
+			});
 	}
 
 	createStage() {
@@ -106,36 +108,43 @@ export default class TelegramBot extends ApplicationComponent {
 						this.application.quit(1);
 					})
 				.on("message", async ctx => {
-					console.log(`Search audio for user @${ctx.chat.username} (id=${ctx.chat.id}) query="${ctx.message.text}"`);
+					try {
+						console.log(`[TelegramBot]: @${ctx.chat.username} (id=${ctx.chat.id}), search audio with query "${ctx.message.text}"`);
 
-					const replyMessageInfo = await this.bot.telegram.sendMessage(ctx.chat.id, "Поиск...");
-					ctx.session.messageToDeleteIds.push(replyMessageInfo["message_id"]);
+						const replyMessageInfo = await this.bot.telegram.sendMessage(ctx.chat.id, "Поиск...");
+						ctx.session.messageToDeleteIds.push(replyMessageInfo["message_id"]);
 
-					const tracks = await this.application.musicDownloadManager.searchTracks(ctx.message.text.trim().toLowerCase());
-					if (tracks.length === 0) {
-						this.autoDeleteContextMessage(ctx);
-						await this.sendMessageWithAutoDelete(ctx.chat.id, "Не найдено");
-					} else {
-						ctx.session.trackInfos = tracks;
+						const tracks = await this.application.musicDownloadManager.searchTracks(ctx.message.text.trim().toLowerCase());
+						if (tracks.length === 0) {
+							this.autoDeleteContextMessage(ctx);
+							await this.sendMessageWithAutoDelete(ctx.chat.id, "Не найдено");
+						} else {
+							ctx.session.trackInfos = tracks;
 
-						const replyMessageInfo = await this.bot.telegram.sendMessage(
-							ctx.chat.id,
-							"Найденные треки:",
-							InlineKeyboard(
-								...ctx.session.trackInfos
-									.map((trackInfo, index) => {
-										const buttonTitle = `${trackInfo.artist} - ${trackInfo.title} | ${trackInfo.trackSource}`;
+							const replyMessageInfo = await this.bot.telegram.sendMessage(
+								ctx.chat.id,
+								"Найденные треки:",
+								InlineKeyboard(
+									...ctx.session.trackInfos
+										.map((trackInfo, index) => {
+											const buttonTitle = `${trackInfo.artist} - ${trackInfo.title} | ${trackInfo.trackSource}`;
 
-										return Row(
-											Button(buttonTitle, `track_${index}`)
-										);
-									}),
-								Row(
-									Button("-- Back --", "back")
-								)
-							));
+											return Row(
+												Button(buttonTitle, `track_${index}`)
+											);
+										}),
+									Row(
+										Button("-- Back --", "back")
+									)
+								));
 
-						ctx.session.messageToDeleteIds.push(ctx.message["message_id"], replyMessageInfo["message_id"]);
+							ctx.session.messageToDeleteIds.push(ctx.message["message_id"], replyMessageInfo["message_id"]);
+						}
+					} catch (error) {
+						console.error(`[TelegramBot]: @${ctx.chat.username} (id=${ctx.chat.id}), error`);
+						console.error(error);
+
+						await this.bot.telegram.sendMessage(ctx.chat.id, "Произошла внутренняя ошибка");
 					}
 				})
 				.action("back", ctx => ctx.scene.enter("main"))
@@ -143,22 +152,22 @@ export default class TelegramBot extends ApplicationComponent {
 					try {
 						const track = ctx.session.trackInfos[Number(ctx.match.input.split("_")[1])];
 
-						console.log(`Download audio track "${track.title}" for user @${ctx.chat.username} (id=${ctx.chat.id})`);
+						console.error(`[TelegramBot]: @${ctx.chat.username} (id=${ctx.chat.id}), download audio track "${track.title}"`);
 
 						const replyMessageInfo = await this.bot.telegram.sendMessage(ctx.chat.id, "Загрузка...");
 						ctx.session.messageToDeleteIds.push(replyMessageInfo["message_id"]);
 
 						const trackFileBuffer = await track.downloadTrack();
 
-						console.log(`Convert audio track "${track.title}" for user @${ctx.chat.username} (id=${ctx.chat.id})`);
+						console.error(`[TelegramBot]: @${ctx.chat.username} (id=${ctx.chat.id}), convert audio track "${track.title}"`);
 
 						const mp3TrackBuffer = await this.application.musicConverter.convertAudioTrackBufferToMp3TrackBuffer(trackFileBuffer, track.artist, track.title);
 
-						console.log(`Uploading audio track "${track.title}" for user @${ctx.chat.username} (id=${ctx.chat.id})`);
+						console.error(`[TelegramBot]: @${ctx.chat.username} (id=${ctx.chat.id}), uploading audio track "${track.title}"`);
 
 						await this.bot.telegram.sendAudio(ctx.chat.id, Input.fromBuffer(mp3TrackBuffer));
 					} catch (error) {
-						console.error(`Error by user @${ctx.chat.username} (id=${ctx.chat.id})`);
+						console.error(`[TelegramBot]: @${ctx.chat.username} (id=${ctx.chat.id}), error`);
 						console.error(error);
 
 						await this.bot.telegram.sendMessage(ctx.chat.id, "Произошла внутренняя ошибка");

@@ -25,9 +25,9 @@ export default class Application {
 
 		this.components = [];
 
-		this.addComponent(this.telegramBot = new TelegramBot());
 		this.addComponent(this.musicDownloadManager = new MusicDownloadManager());
 		this.addComponent(this.musicConverter = new MusicConverter());
+		this.addComponent(this.telegramBot = new TelegramBot());
 	}
 
 	get isDevelopment() {
@@ -41,10 +41,12 @@ export default class Application {
 	}
 
 	async initialize() {
+		console.log(`[Application]: ${this.name} ${this.version}`);
+		if (this.isDevelopment) console.log("[Application]: isDevelopment");
+
 		for (let i = 0; i < this.components.length; i++) await this.components[i].initialize();
 
-		console.log(`[Application]: ${this.name} ${this.version} started`);
-		if (this.isDevelopment) console.log("[Application]: isDevelopment");
+		console.log(`[Application]: initialized`);
 	}
 
 	async run() {

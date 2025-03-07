@@ -24,15 +24,24 @@ function shuffleArray(arr) {
 
 export default class MusicDownloadManager extends ApplicationComponent {
 	async initialize() {
-		this.musicDownloaders = this.createMusicDownloaders();
+		this.createMusicDownloaders();
 	}
 
 	createMusicDownloaders() {
-		return [
-			new DriveMusicClubDownloader(this),
-			new Mp3PartyNetDownloader(this),
-			new MuzofondFMDownloader(this)
+		if (!process.env.MUSIC_DOWNLOADERS) throw new Error("MUSIC_DOWNLOADERS is not set");
+		const musicDownloaderNames = process.env.MUSIC_DOWNLOADERS.split(",").map(s => s.trim()).filter(Boolean);
+
+		const musicDownloaderClasses = [
+			DriveMusicClubDownloader,
+			Mp3PartyNetDownloader,
+			MuzofondFMDownloader
 		];
+
+		this.musicDownloaders = musicDownloaderClasses
+			.filter(musicDownloaderClass => Boolean(musicDownloaderNames.find(musicDownloaderName => musicDownloaderClass.name.includes(musicDownloaderName))))
+			.map(musicDownloaderClass => new musicDownloaderClass(this));
+
+		console.log(`[MusicDownloadManager]: created ${this.musicDownloaders.length} music downloaders; ${this.musicDownloaders.map(musicDownloader => musicDownloader.constructor.name.replace("Downloader", "")).join(", ")}`);
 	}
 
 	async searchTracks(queryString) {
