@@ -22,9 +22,7 @@ class MuzofondFMTrack extends Track {
 export default class MuzofondFMDownloader extends MusicDownloader {
 	async searchTracks(queryString) {
 		const url = new URL(BASE_URL);
-		url.pathname = "search";
-		url.searchParams.set("q", queryString);
-		url.searchParams.set("artist", 0);
+		url.pathname = `search/${encodeURIComponent(queryString)}`;
 
 		const searchResponse = await fetch(url.href, {
 			method: "GET"
